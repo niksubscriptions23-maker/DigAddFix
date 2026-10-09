@@ -149,6 +149,17 @@ public final class CoreChecks {
         overlay.clear();check(overlay.remaining(6000)==0,"overlay cleanup");
 
         Document manifest=DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(root.resolve("app/src/main/AndroidManifest.xml").toFile());
+        Element application=(Element)manifest.getElementsByTagName("application").item(0);
+        check("false".equals(application.getAttribute("android:allowBackup")) && "false".equals(application.getAttribute("android:fullBackupContent")),"credentials excluded from legacy backup");
+        check("@xml/data_extraction_rules".equals(application.getAttribute("android:dataExtractionRules")),"Android 12+ transfer exclusions are connected");
+        Document extraction=DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(root.resolve("app/src/main/res/xml/data_extraction_rules.xml").toFile());
+        for(String mode:Arrays.asList("cloud-backup","device-transfer")) {
+            Element section=(Element)extraction.getElementsByTagName(mode).item(0);
+            check(section!=null && section.getElementsByTagName("include").getLength()==0,"no credential transfer includes: "+mode);
+            Set<String> excluded=new HashSet<>();NodeList exclusions=section.getElementsByTagName("exclude");
+            for(int i=0;i<exclusions.getLength();i++) {Element exclusion=(Element)exclusions.item(i);if(".".equals(exclusion.getAttribute("path"))) excluded.add(exclusion.getAttribute("domain"));}
+            check(excluded.containsAll(Arrays.asList("root","file","database","sharedpref","external","device_root","device_file","device_database","device_sharedpref")),"all app data domains excluded from "+mode);
+        }
         Set<String> visiblePackages=new HashSet<>();NodeList packages=manifest.getElementsByTagName("package");
         for(int i=0;i<packages.getLength();i++) visiblePackages.add(((Element)packages.item(i)).getAttribute("android:name"));
         for(Rules.Rule rule:rules.apps()) check(visiblePackages.contains(rule.key),"installed-package visibility: "+rule.key);

@@ -7,6 +7,7 @@ import android.provider.Settings;
 import com.digaddfix.core.*;
 import java.util.Arrays;
 
+@android.annotation.SuppressLint("ApplySharedPref") // Security decisions require acknowledged persistence; mutating flows run off the UI thread.
 final class Protection {
     private Protection() {}
     static volatile String lastError="";
@@ -23,7 +24,8 @@ final class Protection {
         String issue=prerequisites(context);if(!issue.isEmpty()) throw new IllegalStateException(issue);
         if(!prefs(context).edit().putString("pin",pinRecord).putString("recovery",recoveryRecord)
             .putBoolean("locked",true).putInt("failures",0).putLong("remaining",0).commit()) throw new IllegalStateException("Could not save protection credentials");
-        context.getSharedPreferences("settings",0).edit().putBoolean("app_blocks",true).putBoolean("dns_requested",true).commit();
+        if(!context.getSharedPreferences("settings",0).edit().putBoolean("app_blocks",true).putBoolean("dns_requested",true).commit())
+            throw new IllegalStateException("Could not save active filter settings; release or repair the lock");
         lastError="";
         try {new ManagedProtection(context).apply();}
         catch(Exception e) {lastError="Managed policies need attention. "+safeMessage(e);throw e;}
@@ -45,7 +47,7 @@ final class Protection {
             // Count before hashing: killing/reopening the process cannot grant free attempts.
             if(!p.edit().putInt("failures",failures).putLong("remaining",RetryGate.delay(failures)).commit()) throw new IllegalStateException("Could not save unlock attempt");
             if(!Credential.verify(input,p.getString(recovery?"recovery":"pin",""))) throw new IllegalStateException("The credential was not accepted.");
-            p.edit().putInt("failures",0).putLong("remaining",0).commit();
+            if(!p.edit().putInt("failures",0).putLong("remaining",0).commit()) throw new IllegalStateException("Could not save accepted unlock attempt");
             new ManagedProtection(context).release();
             if(!p.edit().clear().commit()) throw new IllegalStateException("Could not finish unlocking protection");
             lastError="";

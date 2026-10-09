@@ -84,11 +84,14 @@ final class ManagedProtection {
     }
     @SuppressWarnings("deprecation")
     void removeTestOwner() {
-        if(Protection.locked(context)) throw new IllegalStateException("Release protection with your PIN or recovery code first");
-        if(!capable() || (context.getApplicationInfo().flags&android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)==0)
-            throw new IllegalStateException("This action is available only on a device-owner debug test build");
-        // Android documents this API for testing only. Production deprovisioning is a separate workflow.
-        policy.clearDeviceOwnerApp(context.getPackageName());
-        if(policy.isDeviceOwnerApp(context.getPackageName())) throw new IllegalStateException("Android did not remove test device management");
+        synchronized(Protection.class) {
+            if(Protection.locked(context)) throw new IllegalStateException("Release protection with your PIN or recovery code first");
+            if(!capable() || (context.getApplicationInfo().flags&android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)==0)
+                throw new IllegalStateException("This action is available only on a device-owner debug test build");
+            // Serialize with lock/repair/release, including workers from recreated activities.
+            // Android documents this API for testing only. Production deprovisioning is separate.
+            policy.clearDeviceOwnerApp(context.getPackageName());
+            if(policy.isDeviceOwnerApp(context.getPackageName())) throw new IllegalStateException("Android did not remove test device management");
+        }
     }
 }

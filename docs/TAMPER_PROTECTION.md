@@ -28,6 +28,8 @@ The native-screen classifier is deliberately bounded. Chromium settings use a kn
 
 ## Managed test device
 
+Backup note: legacy backup is disabled and explicit Android 12+ rules exclude every app-data domain from cloud backup and device-to-device transfer. Credentials, retry state and device-specific policy journals must stay on their original device. See [Android backup behavior](https://developer.android.com/identity/data/autobackup).
+
 Use a dedicated Android 11+ test device or emulator with no valuable data. A work profile or legacy Device Admin permission is insufficient. DigAddFix does not start provisioning or reset a device. Normal production enrollment is a separate workflow, commonly during fresh device setup; no QR enrollment or production deprovisioning is implemented here.
 
 For an eligible development device, Android documents ADB device-owner testing. Install the debug APK and supported browsers before locking. With no accounts/other owner/users blocking eligibility, an administrator may explicitly run:
