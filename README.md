@@ -18,6 +18,7 @@ The blocklists are starter policy choices, not a classification of every app or 
 ## Install and set up
 
 1. Download `DigAddFix-debug` from a successful [Android build](https://github.com/niksubscriptions23-maker/DigAddFix/actions/workflows/android.yml), extract the APK, and install it on Android 8.0 or newer. The debug APK is for testing; production signing is not configured yet.
+   CI debug signing keys can differ between builds. If Android rejects installation over an earlier test APK, uninstall that test build before installing this one.
 2. Install/enable at least one of Brave, Chrome, or Firefox stable. Enable **browser protection** in DigAddFix and accept Android's VPN consent. The screen lists actual installed browsers and active DNS scope.
 3. Use system DNS in Brave/Chrome. If Firefox uses DNS over HTTPS, disable it. Independent encrypted DNS or browser extensions/proxies can bypass this layer. Choose Google search in each browser; use the browser picker on the SafeSearch test and check that Filter is locked.
 4. Enable DigAddFix accessibility after reading its disclosure. This enables listed-app/other-browser interruption and overlays. DNS filtering works independently of that permission.

@@ -48,6 +48,16 @@ The user explicitly broadened browser coverage to Chrome and Firefox and request
 - Setup/status UI reports each browser's installed/active state and offers a supported-browser picker for opening links and diagnostics. Accessibility disclosure and instructions updated.
 - Version code 2, version 0.2.0.
 
-Local core suite: **127 checks passed**, including all eight supported-browser installation combinations, Chrome-only/Firefox-only/no-browser cases, contradictory rules, package-specific address IDs, other-browser rules, and 10,000 DNS/IP fixtures. Android v0.2 build/lint and APK are pending CI. Device checks are not run.
+Local core suite: **127 checks passed**, including all eight supported-browser installation combinations, Chrome-only/Firefox-only/no-browser cases, contradictory rules, package-specific address IDs, other-browser rules, and 10,000 DNS/IP fixtures.
+
+Final v0.2 source: `4769fb4971acd5eaa652f5fe5795750112b5e08a`. Android core checks, debug build, and lint passed in [workflow 37894408780](https://github.com/niksubscriptions23-maker/DigAddFix/actions/runs/37894408780). Lint: zero errors, 12 warnings in the same SDK/backup/UI-localization categories. Old-session status updates are now posted and checked on the main thread during VPN changes.
+
+Downloaded and checked APK: `DigAddFix-0.2.0-debug.apk`, 53,100 bytes, SHA-256 `4ba26de2c3169314f6130f438389f120a739aa24f5296b09e7ff9a7d0bbab571`. Manifest, DEX, bundled rule assets, supported-browser exclusions from app rules, and selected other-browser rules verified. This is a debug build; CI signing keys can differ between runners, so Android may reject installation over an earlier debug APK.
+
+Device checks are not run. Verify actual routing and overlay/address exposure in each installed supported browser before claiming device coverage.
 
 See `BROWSERS.md` for policy mapping and verified package references. Other search engines, custom encrypted DNS, browser extensions/proxies, unlisted browsers, and Brave/Chrome/Firefox page-text/media scanning remain coverage limits.
+
+## Next requested milestone
+
+The user requested tamper protection next: prevent new app/browser installations and settings changes that allow bypassing blocks. Record this as the next implementation task; it is not part of the v0.2 APK. Assess Android's personal-device versus managed-device capabilities before promising installation/settings/uninstall resistance. No device provisioning or destructive device action has been performed or authorized by this checkpoint.
