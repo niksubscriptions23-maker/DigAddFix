@@ -12,6 +12,7 @@ final class AppState {
     static volatile boolean dnsRunning=false,accessibilityRunning=false;
     static volatile String dnsStatus="Browser protection is off";
     static volatile long blockedRequests=0,blockedApps=0;
+    static volatile List<String> protectedBrowsers=Collections.emptyList();
     private static Rules rules;
     static final Handler MAIN=new Handler(Looper.getMainLooper());
     interface WebsiteListener { void blocked(String host,String reason); }

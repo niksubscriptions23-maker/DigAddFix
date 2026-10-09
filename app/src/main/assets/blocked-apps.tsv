@@ -10,3 +10,34 @@ com.netflix.mediaclient|Netflix|Streaming and binge viewing
 com.amazon.avod.thirdpartyclient|Prime Video|Streaming and binge viewing
 com.king.candycrushsaga|Candy Crush Saga|Gaming
 com.supercell.clashofclans|Clash of Clans|Gaming
+# Other known browsers and unsupported channels. Use the three protected stable browsers.
+com.microsoft.emmx|Microsoft Edge|Browser outside the protected Brave, Chrome and Firefox set
+com.sec.android.app.sbrowser|Samsung Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.sec.android.app.sbrowser.beta|Samsung Browser Beta|Unsupported browser channel
+com.opera.browser|Opera|Browser outside the protected Brave, Chrome and Firefox set
+com.opera.browser.beta|Opera Beta|Unsupported browser channel
+com.opera.mini.native|Opera Mini|Browser outside the protected Brave, Chrome and Firefox set
+com.opera.mini.native.beta|Opera Mini Beta|Unsupported browser channel
+com.duckduckgo.mobile.android|DuckDuckGo Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.vivaldi.browser|Vivaldi|Browser outside the protected Brave, Chrome and Firefox set
+org.torproject.torbrowser|Tor Browser|Browser outside the protected Brave, Chrome and Firefox set
+org.torproject.torbrowser_alpha|Tor Browser Alpha|Unsupported browser channel
+com.UCMobile.intl|UC Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.uc.browser.en|UC Browser Mini|Browser outside the protected Brave, Chrome and Firefox set
+mobi.mgeek.TunnyBrowser|Dolphin Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.yandex.browser|Yandex Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.mi.globalbrowser|Mi Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.android.browser|Android Stock Browser|Browser outside the protected Brave, Chrome and Firefox set
+org.adblockplus.browser|Adblock Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.ghostery.android.ghostery|Ghostery Browser|Browser outside the protected Brave, Chrome and Firefox set
+com.chrome.beta|Chrome Beta|Unsupported browser channel
+com.chrome.dev|Chrome Dev|Unsupported browser channel
+com.chrome.canary|Chrome Canary|Unsupported browser channel
+com.brave.browser_beta|Brave Beta|Unsupported browser channel
+com.brave.browser_nightly|Brave Nightly|Unsupported browser channel
+org.mozilla.firefox_beta|Firefox Beta|Unsupported browser channel
+org.mozilla.fenix|Firefox Nightly|Unsupported browser channel
+org.mozilla.focus|Firefox Focus|Browser outside the protected Brave, Chrome and Firefox set
+org.mozilla.focus.beta|Firefox Focus Beta|Unsupported browser channel
+org.mozilla.focus.nightly|Firefox Focus Nightly|Unsupported browser channel
+org.mozilla.fennec_fdroid|Fennec F-Droid|Browser outside the protected Brave, Chrome and Firefox set

@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">DigAddFix</string>
     <string name="accessibility_name">DigAddFix app blocks and overlays</string>
-    <string name="accessibility_description">DigAddFix observes the active app to interrupt apps on your blocklist and reads Brave’s address field to identify a blocked website. It shows a full-screen overlay for five seconds and returns you to Home. It does not read messages, passwords, or webpage body text. Enable only if you want these protections.</string>
+    <string name="accessibility_description">DigAddFix observes the active app to interrupt apps on your blocklist, including other known browsers, and reads the address fields of Brave, Chrome, and Firefox to identify a blocked website. It shows a full-screen overlay for five seconds and returns you to Home. It does not read messages, passwords, or webpage body text. Enable only if you want these protections.</string>
 </resources>

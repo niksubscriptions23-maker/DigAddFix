@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"/>
     <queries>
         <package android:name="com.brave.browser"/>
+        <package android:name="com.android.chrome"/>
+        <package android:name="org.mozilla.firefox"/>
         <package android:name="com.instagram.android"/>
         <package android:name="com.zhiliaoapp.musically"/>
         <package android:name="org.telegram.messenger"/>
@@ -16,6 +18,36 @@
         <package android:name="com.amazon.avod.thirdpartyclient"/>
         <package android:name="com.king.candycrushsaga"/>
         <package android:name="com.supercell.clashofclans"/>
+        <package android:name="com.microsoft.emmx"/>
+        <package android:name="com.sec.android.app.sbrowser"/>
+        <package android:name="com.sec.android.app.sbrowser.beta"/>
+        <package android:name="com.opera.browser"/>
+        <package android:name="com.opera.browser.beta"/>
+        <package android:name="com.opera.mini.native"/>
+        <package android:name="com.opera.mini.native.beta"/>
+        <package android:name="com.duckduckgo.mobile.android"/>
+        <package android:name="com.vivaldi.browser"/>
+        <package android:name="org.torproject.torbrowser"/>
+        <package android:name="org.torproject.torbrowser_alpha"/>
+        <package android:name="com.UCMobile.intl"/>
+        <package android:name="com.uc.browser.en"/>
+        <package android:name="mobi.mgeek.TunnyBrowser"/>
+        <package android:name="com.yandex.browser"/>
+        <package android:name="com.mi.globalbrowser"/>
+        <package android:name="com.android.browser"/>
+        <package android:name="org.adblockplus.browser"/>
+        <package android:name="com.ghostery.android.ghostery"/>
+        <package android:name="com.chrome.beta"/>
+        <package android:name="com.chrome.dev"/>
+        <package android:name="com.chrome.canary"/>
+        <package android:name="com.brave.browser_beta"/>
+        <package android:name="com.brave.browser_nightly"/>
+        <package android:name="org.mozilla.firefox_beta"/>
+        <package android:name="org.mozilla.fenix"/>
+        <package android:name="org.mozilla.focus"/>
+        <package android:name="org.mozilla.focus.beta"/>
+        <package android:name="org.mozilla.focus.nightly"/>
+        <package android:name="org.mozilla.fennec_fdroid"/>
     </queries>
     <application android:allowBackup="false" android:label="@string/app_name" android:theme="@style/AppTheme" android:icon="@drawable/ic_shield" android:usesCleartextTraffic="false" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">
@@ -26,9 +58,9 @@
         </activity>
         <!-- Active consented VPNs qualify for systemExempted without alarm permissions:
              https://developer.android.com/develop/background-work/services/fgs/service-types#system-exempted
-             BraveDnsService establishes the VPN before calling startForeground.
+             BrowserDnsService establishes the VPN before calling startForeground.
              AGP 8.7 lint does not model this runtime VPN eligibility. -->
-        <service android:name=".BraveDnsService" android:permission="android.permission.BIND_VPN_SERVICE" android:exported="true" android:foregroundServiceType="systemExempted" tools:ignore="ForegroundServicePermission">
+        <service android:name=".BrowserDnsService" android:permission="android.permission.BIND_VPN_SERVICE" android:exported="true" android:foregroundServiceType="systemExempted" tools:ignore="ForegroundServicePermission">
             <intent-filter><action android:name="android.net.VpnService"/></intent-filter>
             <meta-data android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON" android:value="true"/>
         </service>

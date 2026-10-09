@@ -26,7 +26,29 @@ public final class CoreChecks {
         check(rules.domain("instagram.com.example.org")==null,"suffix lookalike allowed");
         check(rules.app("com.instagram.android")!=null,"package block");
         check(rules.app("com.instagram.android.clone")==null,"exact package boundary");
-        check(rules.app(Rules.BRAVE_PACKAGE)==null,"Brave is never app-blocked");
+        for(Browsers.Browser browser:Browsers.all()) {
+            check(rules.app(browser.packageName)==null,browser.label+" is never app-blocked");
+            boolean rejected=false;
+            try {new Rules(new StringReader(browser.packageName+"|Browser|Block\n"),new StringReader(""));}
+            catch(IOException expected) {rejected=true;}
+            check(rejected,"reject contradictory supported-browser app rule: "+browser.label);
+        }
+        List<String> supported=Arrays.asList("com.brave.browser","com.android.chrome","org.mozilla.firefox");
+        for(int mask=0;mask<8;mask++) {
+            List<String> installed=new ArrayList<>(),expected=new ArrayList<>();
+            for(int i=0;i<3;i++) if((mask&(1<<i))!=0) {installed.add(supported.get(i));expected.add(supported.get(i));}
+            installed.addAll(Arrays.asList("com.instagram.android","com.microsoft.emmx","com.android.chrome.clone","org.mozilla.firefox_beta"));
+            check(Browsers.installedScope(installed).equals(expected),"all browser installation combinations isolate non-browser and unsupported packages: "+mask);
+        }
+        check(Browsers.installedScope(Collections.singletonList("com.android.chrome")).equals(Collections.singletonList("com.android.chrome")),"Chrome-only scope does not require Brave");
+        check(Browsers.installedScope(Collections.singletonList("org.mozilla.firefox")).equals(Collections.singletonList("org.mozilla.firefox")),"Firefox-only scope does not require Brave");
+        check(Browsers.installedScope(Collections.<String>emptyList()).isEmpty(),"missing supported browsers cannot imply all-app scope");
+        check(Browsers.find("com.android.chrome").isAddressNode("com.android.chrome:id/url_bar"),"Chrome committed address node");
+        check(Browsers.find("org.mozilla.firefox").isAddressNode("org.mozilla.firefox:id/mozac_browser_toolbar_url_view"),"Firefox committed address node");
+        check(!Browsers.find("org.mozilla.firefox").isAddressNode("com.android.chrome:id/url_bar"),"never read another browser's node as Firefox");
+        check(!Browsers.find("com.android.chrome").isAddressNode("com.android.chrome:id/password"),"never read arbitrary text or input nodes");
+        for(String blocked:Arrays.asList("com.microsoft.emmx","com.sec.android.app.sbrowser","com.opera.browser","com.opera.mini.native","com.duckduckgo.mobile.android","com.vivaldi.browser","org.torproject.torbrowser","com.UCMobile.intl","com.mi.globalbrowser","com.yandex.browser","com.brave.browser_beta","com.chrome.beta","org.mozilla.firefox_beta"))
+            check(rules.app(blocked)!=null,"other known browser on app blocklist: "+blocked);
         check(Rules.hostFromAddress("https://instagram.com/watch?x=1").equals("instagram.com"),"address extraction");
         check(Rules.hostFromAddress("example.org:443/path").equals("example.org"),"bare host with port");
         check(Rules.hostFromAddress("find an instagram page").isEmpty(),"typed search is not a host");
@@ -129,9 +151,10 @@ public final class CoreChecks {
         Set<String> visiblePackages=new HashSet<>();NodeList packages=manifest.getElementsByTagName("package");
         for(int i=0;i<packages.getLength();i++) visiblePackages.add(((Element)packages.item(i)).getAttribute("android:name"));
         for(Rules.Rule rule:rules.apps()) check(visiblePackages.contains(rule.key),"installed-package visibility: "+rule.key);
-        String vpn=new String(Files.readAllBytes(root.resolve("app/src/main/java/com/digaddfix/app/BraveDnsService.java")),StandardCharsets.UTF_8);
-        check(vpn.contains(".addAllowedApplication(Rules.BRAVE_PACKAGE)") && !vpn.contains(".addRoute(\"0.0.0.0\",0)") && !vpn.contains(".addRoute(\"::\",0)"),"browser-only routing configuration");
-        check(vpn.contains("getPackageInfo(Rules.BRAVE_PACKAGE,0)") && vpn.indexOf("getPackageInfo(Rules.BRAVE_PACKAGE,0)")<vpn.indexOf("new Builder()"),"missing Brave never establishes unscoped VPN");
+        for(Browsers.Browser browser:Browsers.all()) check(visiblePackages.contains(browser.packageName),"supported-browser visibility: "+browser.label);
+        String vpn=new String(Files.readAllBytes(root.resolve("app/src/main/java/com/digaddfix/app/BrowserDnsService.java")),StandardCharsets.UTF_8);
+        check(vpn.contains("for(String packageName:scope) builder.addAllowedApplication(packageName)") && !vpn.contains(".addRoute(\"0.0.0.0\",0)") && !vpn.contains(".addRoute(\"::\",0)"),"only installed supported packages use DNS-only VPN routing");
+        check(vpn.contains("if(scope.isEmpty()) throw") && vpn.indexOf("if(scope.isEmpty()) throw")<vpn.indexOf("new Builder()"),"empty supported scope never establishes an all-app VPN");
         System.out.println("PASS: "+checks+" checks (including 10,000 malformed DNS/IP fixtures)");
     }
 }

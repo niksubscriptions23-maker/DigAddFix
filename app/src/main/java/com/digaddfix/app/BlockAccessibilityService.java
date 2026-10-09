@@ -47,19 +47,21 @@ public final class BlockAccessibilityService extends AccessibilityService implem
                 return;
             }
         }
-        if(Rules.BRAVE_PACKAGE.equals(foreground) && AppState.dnsRunning) inspectBrave(root);
+        if(AppState.dnsRunning && AppState.protectedBrowsers.contains(foreground)) inspectBrowser(root,foreground);
     }
     @Override public void blocked(String host,String reason) {
         pending.put(host,new PendingBlock(reason,SystemClock.elapsedRealtime()));
         while(pending.size()>32) pending.remove(pending.keySet().iterator().next());
-        if(Rules.BRAVE_PACKAGE.equals(foreground)) {
+        if(AppState.dnsRunning && AppState.protectedBrowsers.contains(foreground)) {
             AccessibilityNodeInfo root=getRootInActiveWindow();
-            if(root!=null && Rules.BRAVE_PACKAGE.contentEquals(root.getPackageName()==null?"":root.getPackageName())) inspectBrave(root);
+            if(root!=null && foreground.contentEquals(root.getPackageName()==null?"":root.getPackageName())) inspectBrowser(root,foreground);
         }
     }
-    private void inspectBrave(AccessibilityNodeInfo root) {
+    private void inspectBrowser(AccessibilityNodeInfo root,String packageName) {
         if(root==null) return;
-        String host=addressHost(root,0,new int[]{0});
+        Browsers.Browser browser=Browsers.find(packageName);
+        if(browser==null) return;
+        String host=addressHost(root,browser,0,new int[]{0});
         if(host.isEmpty()) return;
         long now=SystemClock.elapsedRealtime();
         Iterator<Map.Entry<String,PendingBlock>> it=pending.entrySet().iterator();
@@ -67,30 +69,30 @@ public final class BlockAccessibilityService extends AccessibilityService implem
             Map.Entry<String,PendingBlock> entry=it.next();
             if(now-entry.getValue().time>30000) {it.remove();continue;}
             if(Rules.relatedHost(host,entry.getKey())) {
-                String reason=entry.getValue().reason;it.remove();interruptWebsite(host,reason);return;
+                String reason=entry.getValue().reason;it.remove();interruptWebsite(packageName,host,reason);return;
             }
         }
         Rules.Rule local=rules.domain(host);
-        if(local!=null) interruptWebsite(host,local.reason);
+        if(local!=null) interruptWebsite(packageName,host,local.reason);
     }
-    private void interruptWebsite(String host,String reason) {
+    private void interruptWebsite(String packageName,String host,String reason) {
         KeyguardManager keyguard=(KeyguardManager)getSystemService(KEYGUARD_SERVICE);
         if(keyguard.isKeyguardLocked()) return;
         performGlobalAction(GLOBAL_ACTION_HOME);
-        overlay.show("site:"+host,"Website blocked",host,reason);
+        overlay.show("site:"+packageName+":"+host,"Website blocked",host,reason);
     }
-    private String addressHost(AccessibilityNodeInfo node,int depth,int[] visited) {
+    private String addressHost(AccessibilityNodeInfo node,Browsers.Browser browser,int depth,int[] visited) {
         if(node==null || depth>16 || ++visited[0]>300) return "";
         String id=node.getViewIdResourceName();
         // Read only the address node, never arbitrary body text, messages or input fields.
-        if(id!=null && (id.endsWith(":id/url_bar") || id.endsWith(":id/location_bar_edit_text"))) {
+        if(browser.isAddressNode(id)) {
             if(node.isFocused()) return ""; // Do not interrupt a partially typed address.
             CharSequence text=node.getText();
             String host=Rules.hostFromAddress(text==null?"":text.toString());
             if(!host.isEmpty()) return host;
         }
         for(int i=0;i<node.getChildCount();i++) {
-            String host=addressHost(node.getChild(i),depth+1,visited);
+            String host=addressHost(node.getChild(i),browser,depth+1,visited);
             if(!host.isEmpty()) return host;
         }
         return "";

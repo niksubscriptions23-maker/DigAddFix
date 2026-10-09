@@ -23,6 +23,7 @@ public final class MainActivity extends Activity {
     private Button toggle;
     private boolean visible;
     private LinearLayout page;
+    private final Map<String,TextView> browserRows=new LinkedHashMap<>();
     private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -39,27 +40,29 @@ public final class MainActivity extends Activity {
         scroll.requestApplyInsets();
         text(page,"DIGADDFIX",13,ACCENT,true);
         text(page,"Make room\nfor your focus.",32,TEXT,true);
-        text(page,"Brave stays your browser. You choose a calmer digital routine.",16,MUTED,false);
+        text(page,"Choose Brave, Chrome or Firefox. Make room for a calmer digital routine.",16,MUTED,false);
 
         LinearLayout browser=card();
         text(browser,"Browser protection",21,TEXT,true);
         status=text(browser,"Browser protection is off",15,MUTED,false);
-        text(browser,"Only Brave stable uses the family DNS filter. Other apps keep their normal networking.",15,MUTED,false);
-        toggle=button(browser,"Enable Brave protection",v->toggleDns());
-        button(browser,"Open Brave",v->openBrave("https://www.google.com"));
+        text(browser,"Family DNS covers installed stable versions of Brave, Chrome and Firefox. Other apps keep their normal networking.",15,MUTED,false);
+        for(Browsers.Browser supported:Browsers.all())
+            browserRows.put(supported.packageName,text(browser,supported.label+" · checking installation",15,TEXT,false));
+        toggle=button(browser,"Enable browser protection",v->toggleDns());
+        button(browser,"Open a supported browser",v->chooseBrowser("https://www.google.com"));
         button(browser,"Setup and coverage",v->showSetup());
 
         LinearLayout apps=card();
         text(apps,"App blocks & five-second pause",21,TEXT,true);
         appStatus=text(apps,"Accessibility is not enabled",15,MUTED,false);
         text(apps,"A full-screen pause appears when a supported app or website is blocked. It closes after five seconds; the block remains.",15,MUTED,false);
-        Switch enabled=new Switch(this);enabled.setText("Block apps on the starter list");enabled.setTextColor(TEXT);
+        Switch enabled=new Switch(this);enabled.setText("Block listed apps and other known browsers");enabled.setTextColor(TEXT);
         enabled.setChecked(getSharedPreferences("settings",0).getBoolean("app_blocks",true));
         enabled.setOnCheckedChangeListener((button,on)->getSharedPreferences("settings",0).edit().putBoolean("app_blocks",on).apply());
         apps.addView(enabled);
         button(apps,"Enable app blocks and overlays",v->new AlertDialog.Builder(this)
             .setTitle("Allow DigAddFix accessibility access")
-            .setMessage(getString(R.string.accessibility_description)+"\n\nWebsite overlays depend on Brave exposing its current address. Domain filtering works independently.")
+            .setMessage(getString(R.string.accessibility_description)+"\n\nWebsite overlays depend on the browser exposing its current address. Domain filtering works independently.")
             .setNegativeButton("Cancel",null)
             .setPositiveButton("Open Android settings",(dialog,which)->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show());
         button(apps,"Review starter blocklists",v->showRules());
@@ -69,18 +72,17 @@ public final class MainActivity extends Activity {
         counts=text(checks,"",15,MUTED,false);
         resolver=text(checks,"Resolver not checked in this session",15,MUTED,false);
         button(checks,"Check family resolver",v->checkResolver());
-        button(checks,"Test a blocked website in Brave",v->openBrave("https://digaddfix-blocked.test"));
-        button(checks,"Verify Google SafeSearch in Brave",v->openBrave("https://www.google.com/safesearch"));
+        button(checks,"Test a blocked website",v->chooseBrowser("https://digaddfix-blocked.test"));
+        button(checks,"Verify Google SafeSearch",v->chooseBrowser("https://www.google.com/safesearch"));
         text(checks,"The test website is a harmless local rule. Check that you see the five-second overlay and that another app still has Internet access.",14,MUTED,false);
 
         text(page,"No account. No ads. No browsing history stored.",14,ACCENT,false);
         text(page,"Starter lists cover selected apps and domains. Webpage text and media are not scanned in this version.",14,MUTED,false);
     }
     private void toggleDns() {
-        if(AppState.dnsRunning) {startService(new Intent(this,BraveDnsService.class).setAction(BraveDnsService.STOP));return;}
-        try {getPackageManager().getPackageInfo(Rules.BRAVE_PACKAGE,0);}
-        catch(PackageManager.NameNotFoundException e) {
-            message("Brave is needed","Install Brave stable, then enable browser protection.");return;
+        if(AppState.dnsRunning) {startService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.STOP));return;}
+        if(BrowserSupport.installed(this).isEmpty()) {
+            message("A supported browser is needed","Install or enable Brave, Chrome or Firefox, then enable browser protection.");return;
         }
         if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},12);
@@ -97,22 +99,30 @@ public final class MainActivity extends Activity {
         super.onRequestPermissionsResult(request,permissions,results);
         if(request==12) requestVpn(); // VPN can run even if notification permission is declined.
     }
-    private void startDns() {startForegroundService(new Intent(this,BraveDnsService.class).setAction(BraveDnsService.START));}
+    private void startDns() {startForegroundService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.START));}
     @Override protected void onActivityResult(int request,int result,Intent data) {
         super.onActivityResult(request,result,data);if(request==11 && result==RESULT_OK) startDns();
     }
-    private void openBrave(String url) {
-        try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)).setPackage(Rules.BRAVE_PACKAGE));}
-        catch(ActivityNotFoundException e) {message("Brave is needed","Install Brave stable to open this link.");}
+    private void chooseBrowser(String url) {
+        List<String> installed=BrowserSupport.installed(this);
+        if(installed.isEmpty()) {message("A supported browser is needed","Install or enable Brave, Chrome or Firefox to open this link.");return;}
+        if(installed.size()==1) {openBrowser(installed.get(0),url);return;}
+        String[] names=new String[installed.size()];
+        for(int i=0;i<names.length;i++) names[i]=Browsers.find(installed.get(i)).label;
+        new AlertDialog.Builder(this).setTitle("Choose browser").setItems(names,(dialog,which)->openBrowser(installed.get(which),url)).show();
+    }
+    private void openBrowser(String packageName,String url) {
+        try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)).setPackage(packageName));}
+        catch(ActivityNotFoundException e) {message("Browser unavailable","This browser could not open the link. Check that it is enabled.");}
     }
     private void showSetup() {
-        message("Set up Brave protection",
-            "1. Enable Brave protection and allow Android's VPN request.\n\n"+
-            "2. In Brave's privacy settings, use system DNS rather than a separate Secure DNS provider. The setting name varies by Brave version. Custom encrypted DNS can bypass domain rules.\n\n"+
-            "3. Choose Google as Brave's search engine. DigAddFix maps supported Google Search hosts to Google's SafeSearch endpoint. Verify Filter is locked on the SafeSearch page. Brave Search and other engines are not enforced in v0.1.\n\n"+
-            "4. Enable DigAddFix accessibility for app blocks and five-second overlays. Full Brave addresses must be exposed for website overlays.\n\n"+
+        message("Set up browser protection",
+            "1. Enable browser protection and allow Android's VPN request. All installed supported stable browsers are included; Brave is not required.\n\n"+
+            "2. Use system DNS in Brave and Chrome. If Firefox uses DNS over HTTPS, turn that off. Independent encrypted DNS or browser extensions/proxies can bypass this filter. Settings vary by browser version.\n\n"+
+            "3. Choose Google as the search engine in each browser. DigAddFix maps supported Google Search hosts to Google's SafeSearch endpoint. Verify Filter is locked separately in Brave, Chrome and Firefox. Other engines are not enforced in v0.2.\n\n"+
+            "4. Enable DigAddFix accessibility for app blocks and five-second overlays. The browser's committed address must be exposed for website overlays. Other known browsers on the list, including beta/nightly channels, are blocked while app blocking is enabled.\n\n"+
             "5. Optional: set DigAddFix as always-on in Android VPN settings. Keep Block connections without VPN OFF so other apps retain Internet access.\n\n"+
-            "Coverage: Brave stable's system DNS queries, including browser background lookups. Other apps and their embedded webviews are excluded. Another VPN, custom DNS, cached/direct addresses, VPN removal, and some browser modes can bypass this layer. Text/image scanning is deferred.");
+            "Coverage: system DNS queries from installed Brave, Chrome and Firefox stable packages, including their background lookups. Other apps and their embedded webviews are excluded from family DNS. The VPN refreshes for supported browser installation/removal/enable changes while active. If all supported browsers are removed, enable protection again after installing one. Unlisted browsers are not automatically classified or blocked. Another VPN, custom DNS, cached/direct addresses and permission removal can bypass this layer. Text/image scanning is deferred.");
     }
     private void showRules() {
         try {
@@ -140,7 +150,7 @@ public final class MainActivity extends Activity {
                 Dns.validateReply(safe,safeReply);Dns.validateReply(test,testReply);
                 if((safeReply[3]&15)!=0 || Dns.addresses(safeReply,Dns.A).isEmpty() || Dns.providerBlocked(safeReply))
                     result="Resolver check failed: ordinary lookup unavailable";
-                else if(Dns.providerBlocked(testReply)) result="Family resolver passed · verify actual Brave routing with the browser tests";
+                else if(Dns.providerBlocked(testReply)) result="Family resolver passed · verify routing in each installed supported browser";
                 else result="Resolver check inconclusive: adult test response was not the expected sinkhole";
             } catch(Exception e) {result="Family resolver unavailable · retry when connected";}
             final String message=result;handler.post(()->{if(!isFinishing() && !isDestroyed()) resolver.setText(message);});
@@ -166,12 +176,24 @@ public final class MainActivity extends Activity {
     private final Runnable refresh=new Runnable() {
         @Override public void run() {
             if(!visible) return;
-            status.setText(AppState.dnsStatus);toggle.setText(AppState.dnsRunning?"Stop Brave protection":"Enable Brave protection");
-            appStatus.setText(AppState.accessibilityRunning?"App blocks and overlays are enabled":"Accessibility is not enabled");
+            status.setText(AppState.dnsStatus);toggle.setText(AppState.dnsRunning?"Stop browser protection":"Enable browser protection");
+            List<String> installed=BrowserSupport.installed(MainActivity.this);
+            for(Browsers.Browser browser:Browsers.all()) {
+                String state=!installed.contains(browser.packageName)?"not installed or disabled":
+                    AppState.dnsRunning && AppState.protectedBrowsers.contains(browser.packageName)?"DNS filter active":"DNS filter off";
+                browserRows.get(browser.packageName).setText(browser.label+" · "+state);
+            }
+            boolean blocks=getSharedPreferences("settings",0).getBoolean("app_blocks",true);
+            appStatus.setText(!AppState.accessibilityRunning?"Accessibility is not enabled":
+                blocks?"Listed apps and other browsers are blocked · overlays enabled":"App blocking is off · website overlays enabled");
             counts.setText("This session: "+AppState.blockedApps+" app interrupts · "+AppState.blockedRequests+" blocked DNS requests");
             handler.postDelayed(this,1000);
         }
     };
-    @Override protected void onResume() {super.onResume();visible=true;handler.post(refresh);}
+    @Override protected void onResume() {
+        super.onResume();visible=true;
+        if(AppState.dnsRunning) startService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.START));
+        handler.post(refresh);
+    }
     @Override protected void onPause() {visible=false;handler.removeCallbacks(refresh);super.onPause();}
 }

@@ -7,7 +7,6 @@ import java.util.*;
 
 /** Immutable bundled policy; no network classification or browsing history. */
 public final class Rules {
-    public static final String BRAVE_PACKAGE = "com.brave.browser";
     public static final class Rule {
         public final String key, label, reason;
         Rule(String key, String label, String reason) { this.key=key; this.label=label; this.reason=reason; }
@@ -15,7 +14,8 @@ public final class Rules {
     private final Map<String,Rule> apps, domains;
     public Rules(Reader appSource, Reader domainSource) throws IOException {
         apps=load(appSource, false); domains=load(domainSource, true);
-        if (apps.containsKey(BRAVE_PACKAGE)) throw new IOException("Brave must not be an app block");
+        for(Browsers.Browser browser:Browsers.all())
+            if(apps.containsKey(browser.packageName)) throw new IOException("Supported browser must not be an app block: "+browser.label);
     }
     private static Map<String,Rule> load(Reader source, boolean host) throws IOException {
         Map<String,Rule> out=new LinkedHashMap<>();
