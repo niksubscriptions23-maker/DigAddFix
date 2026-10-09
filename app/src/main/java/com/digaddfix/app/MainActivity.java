@@ -19,7 +19,8 @@ import java.util.concurrent.Executors;
 public final class MainActivity extends Activity {
     private static final int BG=0xff101c22,CARD=0xff1c2e35,TEXT=0xffe8f1ef,MUTED=0xffaac2c4,ACCENT=0xff66e5b5;
     private final Handler handler=new Handler(Looper.getMainLooper());
-    private TextView status,appStatus,counts,resolver;
+    private TextView status,appStatus,counts,resolver,protectionStatus;
+    private ProtectionUi protectionUi;
     private Button toggle;
     private boolean visible;
     private LinearLayout page;
@@ -27,6 +28,8 @@ public final class MainActivity extends Activity {
     private int dp(int value) {return Math.round(value*getResources().getDisplayMetrics().density);}
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        protectionUi=new ProtectionUi(this);
         getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(BG);
         page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(dp(22),dp(30),dp(22),dp(28));
@@ -58,7 +61,12 @@ public final class MainActivity extends Activity {
         text(apps,"A full-screen pause appears when a supported app or website is blocked. It closes after five seconds; the block remains.",15,MUTED,false);
         Switch enabled=new Switch(this);enabled.setText("Block listed apps and other known browsers");enabled.setTextColor(TEXT);
         enabled.setChecked(getSharedPreferences("settings",0).getBoolean("app_blocks",true));
-        enabled.setOnCheckedChangeListener((button,on)->getSharedPreferences("settings",0).edit().putBoolean("app_blocks",on).apply());
+        enabled.setOnCheckedChangeListener((button,on)->{
+            if(!on && Protection.locked(this)) {
+                button.setChecked(true);message("Protection is locked","Release the lock with your PIN or recovery code before disabling app blocks.");return;
+            }
+            getSharedPreferences("settings",0).edit().putBoolean("app_blocks",on).apply();
+        });
         apps.addView(enabled);
         button(apps,"Enable app blocks and overlays",v->new AlertDialog.Builder(this)
             .setTitle("Allow DigAddFix accessibility access")
@@ -66,6 +74,21 @@ public final class MainActivity extends Activity {
             .setNegativeButton("Cancel",null)
             .setPositiveButton("Open Android settings",(dialog,which)->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show());
         button(apps,"Review starter blocklists",v->showRules());
+
+        LinearLayout protection=card();
+        text(protection,"Protect your setup",21,TEXT,true);
+        protectionStatus=text(protection,"Protection lock is off",15,MUTED,false);
+        text(protection,"Use a PIN and recovery code to guard controls and known bypass screens. Android installation and uninstall restrictions require this app to be the full device owner on Android 11 or newer.",15,MUTED,false);
+        button(protection,"Set PIN and lock protection",v->protectionUi.setup());
+        button(protection,"Release lock with PIN",v->protectionUi.unlock(false));
+        button(protection,"Use recovery code",v->protectionUi.unlock(true));
+        button(protection,"Repair active protection",v->protectionUi.repair());
+        if(new ManagedProtection(this).capable() && (getApplicationInfo().flags&ApplicationInfo.FLAG_DEBUGGABLE)!=0)
+            button(protection,"Remove test management after unlock",v->protectionUi.removeTestManagement());
+        button(protection,"Protection coverage",v->message("Protection coverage",
+            "Personal guard interrupts known app stores, installer/removal activities, Android bypass settings and recognized browser settings. Detection varies by Android/browser version. Unrecognized screens, background installs, ADB, safe mode and accessibility removal can bypass it. It is best effort.\n\n"+
+            "Full device owner on Android 11+ adds OS restrictions on app installations, VPN/private-DNS configuration, extra users and switching users. It protects DigAddFix and supported browser packages from uninstall, force-stop and clearing data, and configures always-on VPN with global lockdown OFF. Browser settings still require correct initial setup; independent encrypted DNS, proxies and extensions are not guaranteed blocked.\n\n"+
+            "Managed restrictions also stop updates until you release the lock. Recovery restores the app's previous managed policies. Factory reset, emergency calling, lock screens, ordinary Wi-Fi/Bluetooth and runtime permission consent are not intentionally blocked. Existing secondary profiles and rooted/recovery environments are outside coverage. No provisioning or reset is performed by this app."));
 
         LinearLayout checks=card();
         text(checks,"Check your protection",21,TEXT,true);
@@ -80,7 +103,10 @@ public final class MainActivity extends Activity {
         text(page,"Starter lists cover selected apps and domains. Webpage text and media are not scanned in this version.",14,MUTED,false);
     }
     private void toggleDns() {
-        if(AppState.dnsRunning) {startService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.STOP));return;}
+        if(AppState.dnsRunning) {
+            if(Protection.locked(this)) {message("Protection is locked","Release the lock with your PIN or recovery code before stopping browser protection.");return;}
+            startService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.STOP));return;
+        }
         if(BrowserSupport.installed(this).isEmpty()) {
             message("A supported browser is needed","Install or enable Brave, Chrome or Firefox, then enable browser protection.");return;
         }
@@ -187,13 +213,16 @@ public final class MainActivity extends Activity {
             appStatus.setText(!AppState.accessibilityRunning?"Accessibility is not enabled":
                 blocks?"Listed apps and other browsers are blocked · overlays enabled":"App blocking is off · website overlays enabled");
             counts.setText("This session: "+AppState.blockedApps+" app interrupts · "+AppState.blockedRequests+" blocked DNS requests");
+            protectionStatus.setText(Protection.status(MainActivity.this));
             handler.postDelayed(this,1000);
         }
     };
     @Override protected void onResume() {
         super.onResume();visible=true;
         if(AppState.dnsRunning) startService(new Intent(this,BrowserDnsService.class).setAction(BrowserDnsService.START));
+        else Protection.resumeDns(this);
         handler.post(refresh);
     }
     @Override protected void onPause() {visible=false;handler.removeCallbacks(refresh);super.onPause();}
+    @Override protected void onDestroy() {protectionUi.close();super.onDestroy();}
 }

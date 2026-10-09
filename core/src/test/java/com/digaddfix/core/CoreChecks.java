@@ -20,6 +20,7 @@ public final class CoreChecks {
         return Files.newBufferedReader(root.resolve("app/src/main/assets/"+file),StandardCharsets.UTF_8);
     }
     public static void main(String[] args) throws Exception {
+        checks+=TamperChecks.run();
         Path root=Paths.get(args[0]);Rules rules=new Rules(reader(root,"blocked-apps.tsv"),reader(root,"blocked-domains.tsv"));
         check(rules.domain("www.INSTAGRAM.com.")!=null,"case/trailing-dot/subdomain");
         check(rules.domain("notinstagram.com")==null,"prefix lookalike allowed");

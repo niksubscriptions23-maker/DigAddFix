@@ -1,6 +1,6 @@
 # DigAddFix
 
-A fresh Android digital detox app. Version 0.2 supports the stable Android releases of Brave, Chrome, and Firefox through a browser-scoped DNS filter, with separate foreground app blocking.
+A fresh Android digital detox app. Version 0.3 supports stable Brave, Chrome, and Firefox through a browser-scoped DNS filter, separate foreground app blocking, and a recoverable protection lock.
 
 ## What works in this implementation
 
@@ -12,6 +12,7 @@ A fresh Android digital detox app. Version 0.2 supports the stable Android relea
 - An opaque full-screen accessibility overlay explains each detected block and closes automatically after five seconds. Repeated events for the same block do not extend the countdown. The underlying block remains active.
 - Website overlays correlate the blocked DNS host with the protected browser's exposed current address. Address readers are scoped to exact native resource IDs for each browser. A blocked background resource should not interrupt an unrelated page.
 - No account, ads, analytics, browsing-history storage, TLS interception, or page-body collection.
+- PIN/recovery lock protects app controls and interrupts recognized installer/store/bypass-settings screens. Full device-owner mode on Android 11+ adds installation, VPN/private-DNS, user, uninstall and app-data controls. Personal protection remains best effort; see [setup and limits](docs/TAMPER_PROTECTION.md).
 
 The blocklists are starter policy choices, not a classification of every app or website. Replace them when the final user-provided lists arrive.
 
@@ -24,12 +25,13 @@ The blocklists are starter policy choices, not a classification of every app or 
 4. Enable DigAddFix accessibility after reading its disclosure. This enables listed-app/other-browser interruption and overlays. DNS filtering works independently of that permission.
 5. Use the test button's picker to check each supported browser. Also confirm that ordinary browsing and other apps still work.
 6. Optional: enable Android's always-on VPN setting for DigAddFix. Keep **Block connections without VPN off** so other apps retain Internet access.
+7. After verifying browser settings and filters, set a protection PIN and save its recovery code outside the phone. Managed restrictions also prevent updates: release the lock before installation/maintenance. Device-owner provisioning is a separate test-device action, never automatic.
 
 Run the [device verification checklist](docs/DEVICE_VERIFICATION.md) before relying on this build.
 
 ## Coverage and limits
 
-Only the three supported stable packages' system DNS lookups are covered, including their background lookups. Other browsers, other apps, and their embedded webviews are excluded from family DNS in v0.2. The app blocklist separately interrupts known unsupported browsers when accessibility and the app-block switch are enabled. Custom encrypted DNS, another VPN, cached/direct IP access, disabling permissions, browser extensions/proxies, and uninstalling the app can bypass this layer. DNS cannot classify an individual post, image, video, or an allowed domain's page content.
+Only the three supported stable packages' system DNS lookups are covered, including their background lookups. Other browsers, other apps, and their embedded webviews are excluded from family DNS. The app blocklist separately interrupts known unsupported browsers while accessibility and app blocking are enabled. The lock adds resistance within its documented mode; custom encrypted DNS, cached/direct IP access, permissions, browser extensions/proxies and unrecognized UI remain coverage limits. DNS cannot classify an individual post, image, video, or an allowed domain's page content.
 
 While active, the VPN refreshes its explicit browser list on supported-package installation, removal, replacement, or enable/disable changes, and checks it again when the setup screen resumes. Removing all supported browsers stops the VPN; install one and enable protection again. Reconfiguration can briefly interrupt browser DNS and does not promise a bypass-free transition.
 
@@ -57,5 +59,6 @@ Relevant files:
 - [`app`](app/src/main/java/com/digaddfix/app): browser DNS service, installation support, accessibility interruption, overlay, and setup UI.
 - [`BROWSERS.md`](docs/BROWSERS.md): exact supported package mapping, block policy, and primary references.
 - [`PROGRESS.md`](docs/PROGRESS.md): saved decisions, verification results, and next work.
+- [`TAMPER_PROTECTION.md`](docs/TAMPER_PROTECTION.md): personal/managed modes, recovery, test setup and teardown.
 
 Permission changes and package lists should always be reviewed alongside the device checklist. Never turn missing supported browsers into an unrestricted VPN.

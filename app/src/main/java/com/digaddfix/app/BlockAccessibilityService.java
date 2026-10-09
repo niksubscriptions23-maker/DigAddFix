@@ -24,6 +24,7 @@ public final class BlockAccessibilityService extends AccessibilityService implem
         try {rules=AppState.rules(this);}
         catch(IOException e) {disableSelf();return;}
         overlay=new BlockOverlay(this);AppState.websiteListener=this;AppState.accessibilityRunning=true;
+        Protection.resumeDns(this);
     }
     @Override public void onAccessibilityEvent(AccessibilityEvent event) {
         if(rules==null || event.getPackageName()==null) return;
@@ -35,7 +36,15 @@ public final class BlockAccessibilityService extends AccessibilityService implem
         if(event.getEventType()==AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) foreground=name;
         AccessibilityNodeInfo root=getRootInActiveWindow();
         if(root!=null && root.getPackageName()!=null) foreground=root.getPackageName().toString();
-        if(getSharedPreferences("settings",0).getBoolean("app_blocks",true)) {
+        if(Protection.locked(this)) {
+            String reason=TamperScreens.reason(foreground,event.getClassName()==null?"":event.getClassName().toString());
+            if(reason.isEmpty() && nativeSettings(root,foreground,0,new int[]{0})) reason="Browser preferences and extensions are protected. Release the lock in DigAddFix first.";
+            if(!reason.isEmpty()) {interruptGuard("screen:"+foreground,"Protected settings",reason);return;}
+            if(Browsers.find(foreground)!=null && (!AppState.dnsRunning || !AppState.protectedBrowsers.contains(foreground))) {
+                interruptGuard("filter:"+foreground,"Browser filter unavailable","Open DigAddFix to restore browser protection. Your lock is still active.");return;
+            }
+        }
+        if(Protection.locked(this) || getSharedPreferences("settings",0).getBoolean("app_blocks",true)) {
             Rules.Rule rule=rules.app(foreground);
             long now=SystemClock.elapsedRealtime();
             if(rule!=null) {
@@ -61,7 +70,11 @@ public final class BlockAccessibilityService extends AccessibilityService implem
         if(root==null) return;
         Browsers.Browser browser=Browsers.find(packageName);
         if(browser==null) return;
-        String host=addressHost(root,browser,0,new int[]{0});
+        String address=address(root,browser,0,new int[]{0});
+        if(Protection.locked(this) && TamperScreens.internalSettings(address)) {
+            interruptGuard("browser-settings:"+packageName,"Browser settings protected","Release the lock in DigAddFix before changing browser configuration.");return;
+        }
+        String host=Rules.hostFromAddress(address);
         if(host.isEmpty()) return;
         long now=SystemClock.elapsedRealtime();
         Iterator<Map.Entry<String,PendingBlock>> it=pending.entrySet().iterator();
@@ -81,19 +94,30 @@ public final class BlockAccessibilityService extends AccessibilityService implem
         performGlobalAction(GLOBAL_ACTION_HOME);
         overlay.show("site:"+packageName+":"+host,"Website blocked",host,reason);
     }
-    private String addressHost(AccessibilityNodeInfo node,Browsers.Browser browser,int depth,int[] visited) {
+    private void interruptGuard(String key,String title,String reason) {
+        long now=SystemClock.elapsedRealtime();
+        if(key.equals(lastApp) && now-lastAppAction<=1500) return;
+        lastApp=key;lastAppAction=now;performGlobalAction(GLOBAL_ACTION_HOME);
+        overlay.show(key,title,"Protection lock",reason);
+    }
+    private boolean nativeSettings(AccessibilityNodeInfo node,String pkg,int depth,int[] visited) {
+        if(node==null || depth>16 || ++visited[0]>300) return false;
+        if(TamperScreens.nativeSettingsNode(pkg,node.getViewIdResourceName())) return true;
+        for(int i=0;i<node.getChildCount();i++) if(nativeSettings(node.getChild(i),pkg,depth+1,visited)) return true;
+        return false;
+    }
+    private String address(AccessibilityNodeInfo node,Browsers.Browser browser,int depth,int[] visited) {
         if(node==null || depth>16 || ++visited[0]>300) return "";
         String id=node.getViewIdResourceName();
         // Read only the address node, never arbitrary body text, messages or input fields.
         if(browser.isAddressNode(id)) {
             if(node.isFocused()) return ""; // Do not interrupt a partially typed address.
             CharSequence text=node.getText();
-            String host=Rules.hostFromAddress(text==null?"":text.toString());
-            if(!host.isEmpty()) return host;
+            if(text!=null && text.length()<=4096) return text.toString();
         }
         for(int i=0;i<node.getChildCount();i++) {
-            String host=addressHost(node.getChild(i),browser,depth+1,visited);
-            if(!host.isEmpty()) return host;
+            String value=address(node.getChild(i),browser,depth+1,visited);
+            if(!value.isEmpty()) return value;
         }
         return "";
     }

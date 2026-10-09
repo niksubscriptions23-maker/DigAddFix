@@ -8,5 +8,6 @@ Read `docs/PROGRESS.md` and `docs/DEVICE_VERIFICATION.md` before continuing. Rec
 - App blocking is a separate foreground policy, including offline apps. Initial package/domain lists are bundled; the user's final lists are pending.
 - A detected block shows an opaque full-screen overlay for five seconds, then removes it. Repeated notifications for the same block must not extend the timer. Blocking remains active afterward.
 - Correlate website overlays with the current committed address of an actively protected browser, not arbitrary background DNS resources. Read only browser-specific URL-bar resource IDs; do not collect page bodies, messages, passwords, or browsing history.
-- Show truthful permission and service status. This is voluntary protection, not an uninstall-resistant device-management solution.
+- Show truthful permission and service status. Personal guard is best effort. Managed installation/uninstall/data-control policies require a full device owner on API 30+. Never imply a legacy admin or work profile provides that mode. Preserve recoverable policy baselines and keep VPN lockdown off.
+- Do not provision or reset a user's device automatically. Test device-owner setup and deprovisioning are separate, explicit actions. PIN/recovery release restores this app's policy baseline; never silently discard a partial managed-policy journal.
 - Run `python3 scripts/check_core.py` and the Android build/lint checks when relevant. Do not describe device checks as passed without device evidence.

@@ -61,3 +61,16 @@ See `BROWSERS.md` for policy mapping and verified package references. Other sear
 ## Next requested milestone
 
 The user requested tamper protection next: prevent new app/browser installations and settings changes that allow bypassing blocks. Record this as the next implementation task; it is not part of the v0.2 APK. Assess Android's personal-device versus managed-device capabilities before promising installation/settings/uninstall resistance. No device provisioning or destructive device action has been performed or authorized by this checkpoint.
+
+## Current v0.3 implementation
+
+- Recoverable PIN/recovery lock with independent salted PBKDF2-HMAC-SHA256 records, 600,000 iterations, off-main-thread hashing, once-shown 128-bit recovery code and saved-code confirmation. Credential forms exclude screenshots, autofill and Activity saved state.
+- Persistent retry gate after five incorrect attempts, exponential waits capped at 15 minutes; same-boot monotonic time and rollback-aware reboot checkpoints. Attempts are saved before hashing.
+- Locked app controls and service STOP cannot disable filters. Accessibility enforces app blocks while locked, interrupts known stores/installers/bypass-settings/native browser preference/extension screens, and interrupts supported browsers when the active scoped filter is missing. Existing five-second overlay clock remains unchanged.
+- Personal guard is explicitly best effort, with finite native activity/resource-ID rules and no page-body/settings-label scanning. No blanket Android Settings/PermissionController block.
+- API 30+ full device-owner policies: install/update restrictions, VPN/private-DNS configuration restrictions, extra-user/user-switch restrictions, uninstall blocking and user-control-disabled packages for DigAddFix and stable Brave/Chrome/Firefox, plus always-on VPN with lockdown **false**. Owner mode is detected, never provisioned automatically. Legacy admin/work profiles do not qualify.
+- Durable baseline saved before OS mutations; release verifies restoration, retaining journal/lock on failure. Repair, reboot and package-update reconciliation. Explicitly confirmed debug-only test owner teardown after unlocking; production enrollment/deprovisioning remains deferred.
+- Browser-only DNS routing preserved; no default route, all-app DNS or global lockdown. No factory-reset, safe-boot/debugging restriction or destructive device action performed.
+- Version code 3 / version 0.3.0. See `TAMPER_PROTECTION.md` and the expanded device checklist.
+
+Local suite: **201 checks passed**, including an independent PBKDF2 fixture, malformed credential bounds, salts, recovery, persistent retry clock arithmetic, native-screen negative boundaries, browser routing checks, and 10,000 DNS/IP fuzz fixtures. Android compile/lint and v0.3 APK are pending at this source checkpoint. Device/provisioning/policy integration checks are **not run**.

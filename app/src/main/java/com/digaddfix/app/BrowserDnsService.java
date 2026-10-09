@@ -46,6 +46,7 @@ public final class BrowserDnsService extends VpnService {
     }
     @Override public int onStartCommand(Intent intent,int flags,int startId) {
         if(intent!=null && STOP.equals(intent.getAction())) {
+            if(Protection.locked(this)) return START_STICKY;
             main.removeCallbacks(refreshScope);
             scopeInvalidated=false;
             getSharedPreferences("settings",0).edit().putBoolean("dns_requested",false).apply();shutdown("Browser protection is off");stopSelf();return START_NOT_STICKY;
