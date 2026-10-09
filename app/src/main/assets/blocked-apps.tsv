@@ -1,0 +1,12 @@
+# package|display name|reason
+# Starter policy. Replace/extend with the user's final list.
+com.instagram.android|Instagram|Social media and short-video feeds
+com.zhiliaoapp.musically|TikTok|Short-video feeds
+org.telegram.messenger|Telegram|Platform selected by the user for blocking
+com.twitter.android|X|Social media and mixed-content feeds
+com.snapchat.android|Snapchat|Social media and short-form content
+com.google.android.youtube|YouTube|Video feeds and repeated viewing
+com.netflix.mediaclient|Netflix|Streaming and binge viewing
+com.amazon.avod.thirdpartyclient|Prime Video|Streaming and binge viewing
+com.king.candycrushsaga|Candy Crush Saga|Gaming
+com.supercell.clashofclans|Clash of Clans|Gaming

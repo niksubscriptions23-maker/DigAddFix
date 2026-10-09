@@ -1,0 +1,16 @@
+# hostname|display name|reason; includes subdomains, not unrelated lookalike hosts
+instagram.com|Instagram|Social media and short-video feeds
+tiktok.com|TikTok|Short-video feeds
+telegram.org|Telegram|Platform selected by the user for blocking
+t.me|Telegram|Platform selected by the user for blocking
+twitter.com|X|Social media and mixed-content feeds
+x.com|X|Social media and mixed-content feeds
+snapchat.com|Snapchat|Social media and short-form content
+youtube.com|YouTube|Video feeds and repeated viewing
+youtu.be|YouTube|Video feeds and repeated viewing
+netflix.com|Netflix|Streaming and binge viewing
+primevideo.com|Prime Video|Streaming and binge viewing
+dramabox.com|DramaBox|Short-drama viewing
+roblox.com|Roblox|Gaming
+store.steampowered.com|Steam store|Gaming
+digaddfix-blocked.test|Protection test|Harmless local block test

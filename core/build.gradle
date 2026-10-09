@@ -1,0 +1,9 @@
+plugins { id 'java-library' }
+java { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }
+tasks.register('verifyCore', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.digaddfix.core.CoreChecks'
+    args rootProject.projectDir.absolutePath
+}
+check.dependsOn verifyCore
