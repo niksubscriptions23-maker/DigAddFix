@@ -76,3 +76,13 @@ The user requested tamper protection next: prevent new app/browser installations
 Local suite: **207 checks passed**, including an independent PBKDF2 fixture, malformed credential bounds, salts, recovery, persistent retry clock arithmetic, native-screen negative boundaries, backup/transfer exclusions, browser routing checks, and 10,000 DNS/IP fuzz fixtures. Initial v0.3 Android compile/lint passed for `ea2c2ba9e839976c0e99d6b7d196a9de10ba8026` in workflow `37897897246` (zero errors, 15 warnings). Final backup/concurrency hardening build and APK are pending at this checkpoint. Device/provisioning/policy integration checks are **not run**.
 
 Final review adds explicit cloud/device-transfer exclusions for every app-data domain and disables legacy backup. Credentials and device-specific policy journals must not migrate onto another device. Owner test teardown is serialized with lock/repair/release across Activity workers. Security-critical synchronous preference writes are checked before continuing; their narrow lint suppression is documented and these flows run off the UI thread.
+
+## Final v0.3 verification and delivery
+
+Source: `71eb167f3ac63d8f213b78b9bf45cefe389a01c5`. [Successful Android workflow 37898464096](https://github.com/niksubscriptions23-maker/DigAddFix/actions/runs/37898464096) passed 207 policy/protocol/security checks, `:core:check`, `:app:assembleDebug` and `:app:lintDebug`. Lint: **zero errors, 12 warnings**, limited to target SDK currency and UI localization. Backup warnings were resolved; acknowledged security writes have a documented narrow suppression.
+
+Downloaded final artifact, checked ZIP digest/integrity, all DEX files for new protection/core classes, bundled rules, native resources and binary manifest version/backup/receiver declarations. APK: `DigAddFix-0.3.0-debug.apk`, **73,097 bytes**, SHA-256 `0b32faf27cefdb831c18e4c508215357c78c4150f0d55cd34e66e039843f4a56`.
+
+This is a debug test installer. CI signing keys may differ from earlier builds; release an old lock and remove any test owner role before uninstalling an incompatible earlier APK. Stable production signing and production provisioning/deprovisioning remain pending.
+
+No phone/emulator, device-owner enrollment, factory reset or policy mutation on a device was performed. Build/core results do not establish real-device installation resistance, OEM/native browser UI coverage, policy recovery, reboot behavior, DNS isolation or full-screen overlays. The next task is the expanded device checklist in personal mode and on a dedicated managed test device, then any resulting fixes. Final app/domain/keyword lists, built-in browser/page-media scanning and earlier shopping/language requirements remain pending.
