@@ -134,8 +134,11 @@ public final class BrowserDnsService extends VpnService {
                 try {
                     FilterEngine.Result result=sessionEngine.resolve(query);
                     if(stopped || generation!=sessionGeneration) return;
-                    if(result.blocked) AppState.websiteBlocked(result.host,result.reason);
-                    AppState.dnsStatus=result.failed?"Browser DNS active · family resolver unavailable":"Browser DNS active · page text is not scanned";
+                    AppState.MAIN.post(()->{
+                        if(stopped || generation!=sessionGeneration) return;
+                        if(result.blocked) AppState.websiteBlocked(result.host,result.reason);
+                        AppState.dnsStatus=result.failed?"Browser DNS active · family resolver unavailable":"Browser DNS active · page text is not scanned";
+                    });
                     done.finish(result.response);
                 } catch(IllegalArgumentException e) {done.finish(null);}
             });
