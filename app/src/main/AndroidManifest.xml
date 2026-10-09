@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -24,7 +24,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <service android:name=".BraveDnsService" android:permission="android.permission.BIND_VPN_SERVICE" android:exported="true" android:foregroundServiceType="systemExempted">
+        <!-- Active consented VPNs qualify for systemExempted without alarm permissions:
+             https://developer.android.com/develop/background-work/services/fgs/service-types#system-exempted
+             BraveDnsService establishes the VPN before calling startForeground.
+             AGP 8.7 lint does not model this runtime VPN eligibility. -->
+        <service android:name=".BraveDnsService" android:permission="android.permission.BIND_VPN_SERVICE" android:exported="true" android:foregroundServiceType="systemExempted" tools:ignore="ForegroundServicePermission">
             <intent-filter><action android:name="android.net.VpnService"/></intent-filter>
             <meta-data android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON" android:value="true"/>
         </service>
